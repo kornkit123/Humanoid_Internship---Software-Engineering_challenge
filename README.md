@@ -1,4 +1,4 @@
-# 🤖 LLM Agent in a Virtual World
+# LLM Agent in a Virtual World
 
 An intelligent agent powered by Claude that perceives, reasons, and acts inside a 2D tile-based world to accomplish goal-directed tasks.
 
@@ -16,14 +16,14 @@ An intelligent agent powered by Claude that perceives, reasons, and acts inside 
 
 ---
 
-## 📦 Requirements
+## Requirements
 
 - Python 3.10+
 - An Anthropic API key ([get one here](https://console.anthropic.com/))
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # 1. Clone the repo
@@ -42,7 +42,7 @@ python main.py --scenario key_door
 
 ---
 
-## 🗺️ Scenarios
+## Scenarios
 
 | Scenario | Description | Goal |
 |---|---|---|
@@ -67,7 +67,7 @@ python main.py --scenario navigate      # maze pathfinding
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 llm-agent-world/
@@ -87,7 +87,7 @@ llm-agent-world/
 
 ---
 
-## 🧠 Design Choices
+## Design Choices
 
 ### 1. Observation Representation
 
@@ -152,29 +152,29 @@ The agent is prompted to wrap its response in `<reasoning>...</reasoning>` and `
 ============================================================
 
 ── Step 1 / Turn 1 ──────────────────────────────────────
-🧠  Reasoning: I can see the locked door (D) to my north. The K entity
+    Reasoning: I can see the locked door (D) to my north. The K entity
     on the minimap is to the east. I'll head east to find the key.
-⚡  Action: {"action": "move", "direction": "east"}
+    Action: {"action": "move", "direction": "east"}
 ✓  Result: You move east and stand on stone floor.
 
 ── Step 9 / Turn 9 ──────────────────────────────────────
-🧠  Reasoning: The Brass Key is here. Time to pick it up!
-⚡  Action: {"action": "pickup", "target": "brass key"}
+    Reasoning: The Brass Key is here. Time to pick it up!
+    Action: {"action": "pickup", "target": "brass key"}
 ✓  Result: You pick up Brass Key.
 
 ── Step 15 / Turn 15 ─────────────────────────────────────
-🧠  Reasoning: I can see the locked door to my north. I have the Brass
+    Reasoning: I can see the locked door to my north. I have the Brass
     Key — let me use it to unlock the door.
-⚡  Action: {"action": "use", "item": "Brass Key", "target": "door"}
+    Action: {"action": "use", "item": "Brass Key", "target": "door"}
 ✓  Result: You use Brass Key to unlock the door to the north!
 
-🎉  GOAL ACHIEVED!
+    GOAL ACHIEVED!
 ```
 
 See `logs/key_door_example.json` for a full transcript.
 
 ---
 
-## 📜 License
+##    License
 
 MIT
