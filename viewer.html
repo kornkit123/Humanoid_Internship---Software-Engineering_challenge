@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Agent World — Run Viewer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --border: #1e1e2e;
+    --accent: #7c6af5;
+    --accent2: #e8a44a;
+    --green: #4ade80;
+    --red: #f87171;
+    --text: #e2e2f0;
+    --muted: #6b6b8a;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 24px 32px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+  header h1 {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: -0.02em;
+    color: #fff;
+  }
+  header .sub {
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 72px);
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .sidebar-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 4px 8px 8px;
+  }
+  .step-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    transition: all 0.12s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .step-btn:hover { background: var(--surface); border-color: var(--border); }
+  .step-btn.active { background: #1a1a2e; border-color: var(--accent); }
+  .step-num {
+    font-size: 0.65rem;
+    color: var(--muted);
+    min-width: 28px;
+    padding-top: 1px;
+  }
+  .step-action-label {
+    flex: 1;
+  }
+  .step-verb {
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .step-dir {
+    color: var(--accent2);
+  }
+  .step-ok { color: var(--green); font-size: 0.7rem; }
+  .step-fail { color: var(--red); font-size: 0.7rem; }
+
+  /* ── Main panel ── */
+  .main {
+    overflow-y: auto;
+    padding: 28px 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .turn-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .turn-badge {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 4px;
+    background: var(--accent);
+    color: #fff;
+  }
+  .turn-title {
+    font-family: var(--sans);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .card-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .reasoning-text {
+    font-size: 0.85rem;
+    line-height: 1.65;
+    color: #c8c8e8;
+    font-style: italic;
+  }
+
+  .action-json {
+    background: #0d0d18;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 0.82rem;
+    color: var(--accent2);
+    letter-spacing: 0.01em;
+  }
+
+  .result-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 0.83rem;
+  }
+  .result-box.ok   { background: #0f2a1a; border: 1px solid #1a4a2a; color: var(--green); }
+  .result-box.fail { background: #2a0f0f; border: 1px solid #4a1a1a; color: var(--red); }
+  .result-icon { font-size: 1rem; }
+
+  .nav-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .nav-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 18px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .nav-btn:disabled:hover { border-color: var(--border); color: var(--text); }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .progress-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  .goal-banner {
+    background: #0a1f0a;
+    border: 1px solid #1a3a1a;
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 0.82rem;
+    color: #b0e0b0;
+    line-height: 1.5;
+  }
+  .goal-banner strong {
+    color: var(--green);
+    font-family: var(--sans);
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🤖 LLM Agent World</h1>
+  <span class="sub">Run Replay Viewer — key_door scenario</span>
+</header>
+
+<div class="layout">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-label">Steps</div>
+  </div>
+
+  <div class="main" id="main">
+    <p style="color:var(--muted);font-size:0.85rem">Loading run…</p>
+  </div>
+</div>
+
+<script>
+const LOG = [
+  {
+    "turn": 1,
+    "reasoning": "I start in the bottom-left of the room. My goal is to find the brass key and unlock the door in the wall to my north. Looking at the minimap, I can see the locked door (D) is to my north and slightly east. I should explore east to find the key — I can see something marked 'K' on the far east side of the minimap.",
+    "action": {"action": "move", "direction": "east"},
+    "success": true,
+    "message": "You move east and stand on stone floor."
+  },
+  {
+    "turn": 2,
+    "reasoning": "Moving east toward where I expect the key to be. I need to keep heading east.",
+    "action": {"action": "move", "direction": "east"},
+    "success": true,
+    "message": "You move east and stand on stone floor."
+  },
+  {
+    "turn": 3,
+    "reasoning": "Continuing east. The key should be somewhere in the eastern part of this room.",
+    "action": {"action": "move", "direction": "east"},
+    "success": true,
+    "message": "You move east and stand on stone floor."
+  },
+  {
+    "turn": 4,
+    "reasoning": "Still heading east. The minimap showed the K marker was quite far to the east.",
+    "action": {"action": "move", "direction": "east"},
+    "success": true,
+    "message": "You move east and stand on stone floor."
+  },
+  {
+    "turn": 5,
+    "reasoning": "Let me examine the sign I saw earlier — it might give me a clue about where the key is.",
+    "action": {"action": "examine", "target": "sign"},
+    "success": false,
+    "message": "You don't see anything called 'sign' nearby."
+  },
+  {
+    "turn": 6,
+    "reasoning": "The sign is too far away now. Let me keep heading east toward the key.",
+    "action": {"action": "move", "direction": "east"},
+    "success": true,
+    "message": "You move east and stand on stone floor."
+  },
+  {
+    "turn": 7,
+    "reasoning": "One more step east — the K entity should be very close now.",
+    "action": {"action": "move", "direction": "east"},
+    "success": true,
+    "message": "You move east and stand on stone floor."
+  },
+  {
+    "turn": 8,
+    "reasoning": "I can see the Brass Key right here on this tile! I should pick it up immediately.",
+    "action": {"action": "move", "direction": "east"},
+    "success": true,
+    "message": "You move east and stand on stone floor. You see Brass Key here."
+  },
+  {
+    "turn": 9,
+    "reasoning": "The Brass Key is here. Time to pick it up!",
+    "action": {"action": "pickup", "target": "brass key"},
+    "success": true,
+    "message": "You pick up Brass Key."
+  },
+  {
+    "turn": 10,
+    "reasoning": "I have the Brass Key. Now I need to navigate to the locked door in the northern wall. The door (D) was at approximately x=6, y=4. I'm currently at x=9, y=7. I should go west a few steps then north to reach the door.",
+    "action": {"action": "move", "direction": "west"},
+    "success": true,
+    "message": "You move west and stand on stone floor."
+  },
+  {
+    "turn": 11,
+    "reasoning": "Keep moving west toward the door column.",
+    "action": {"action": "move", "direction": "west"},
+    "success": true,
+    "message": "You move west and stand on stone floor."
+  },
+  {
+    "turn": 12,
+    "reasoning": "Moving west — I need to align with x=6 where the door is.",
+    "action": {"action": "move", "direction": "west"},
+    "success": true,
+    "message": "You move west and stand on stone floor."
+  },
+  {
+    "turn": 13,
+    "reasoning": "Now heading north toward the locked door in the wall.",
+    "action": {"action": "move", "direction": "north"},
+    "success": true,
+    "message": "You move north and stand on stone floor."
+  },
+  {
+    "turn": 14,
+    "reasoning": "Continuing north. The wall with the locked door should be just above me.",
+    "action": {"action": "move", "direction": "north"},
+    "success": true,
+    "message": "You move north and stand on stone floor."
+  },
+  {
+    "turn": 15,
+    "reasoning": "I can see the locked door to my north! I have the Brass Key — let me use it to unlock the door.",
+    "action": {"action": "use", "item": "Brass Key", "target": "door"},
+    "success": true,
+    "message": "You use Brass Key to unlock the door to the north!"
+  },
+  {
+    "turn": 16,
+    "reasoning": "The door is unlocked. Now I can pass through and head north to reach the treasure chest.",
+    "action": {"action": "move", "direction": "north"},
+    "success": true,
+    "message": "You move north and stand on an unlocked wooden door."
+  },
+  {
+    "turn": 17,
+    "reasoning": "I'm through the door! The chest is somewhere in this northern room. Let me move toward it.",
+    "action": {"action": "move", "direction": "north"},
+    "success": true,
+    "message": "You move north and stand on stone floor. You see Treasure Chest here."
+  },
+  {
+    "turn": 18,
+    "reasoning": "I've reached the Treasure Chest — goal achieved! Let me examine it to confirm.",
+    "action": {"action": "examine", "target": "chest"},
+    "success": true,
+    "message": "Treasure Chest: A heavy wooden chest bound in iron."
+  }
+];
+
+const GOAL = "Find the brass key somewhere in this room, use it to unlock the locked door in the wall to your north, then reach the treasure chest beyond it.";
+
+let current = 0;
+
+function actionLabel(step) {
+  const a = step.action;
+  if (a.action === 'move')    return `<span class="step-verb">move</span> <span class="step-dir">${a.direction}</span>`;
+  if (a.action === 'pickup')  return `<span class="step-verb">pickup</span> <span class="step-dir">${a.target}</span>`;
+  if (a.action === 'use')     return `<span class="step-verb">use</span> <span class="step-dir">${a.item}</span>`;
+  if (a.action === 'examine') return `<span class="step-verb">examine</span> <span class="step-dir">${a.target}</span>`;
+  if (a.action === 'talk')    return `<span class="step-verb">talk</span> <span class="step-dir">${a.target}</span>`;
+  return `<span class="step-verb">${a.action}</span>`;
+}
+
+function buildSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.innerHTML = '<div class="sidebar-label">Steps</div>';
+  LOG.forEach((step, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'step-btn' + (i === current ? ' active' : '');
+    btn.innerHTML = `
+      <span class="step-num">T${step.turn}</span>
+      <span class="step-action-label">
+        ${actionLabel(step)}
+        <br>
+        <span class="${step.success ? 'step-ok' : 'step-fail'}">${step.success ? '✓ ok' : '✗ fail'}</span>
+      </span>
+    `;
+    btn.onclick = () => { current = i; render(); };
+    sb.appendChild(btn);
+  });
+}
+
+function render() {
+  buildSidebar();
+  const step = LOG[current];
+  const pct  = Math.round(((current + 1) / LOG.length) * 100);
+  const isLast = current === LOG.length - 1;
+
+  document.getElementById('main').innerHTML = `
+    <div class="goal-banner">
+      <strong>Goal</strong>
+      ${GOAL}
+    </div>
+
+    <div class="progress-row">
+      <span>Step ${current + 1} / ${LOG.length}</span>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <span>${pct}%</span>
+    </div>
+
+    <div>
+      <div class="turn-header">
+        <span class="turn-badge">Turn ${step.turn}</span>
+        <span class="turn-title">${step.action.action.toUpperCase()}${step.action.direction ? ' → ' + step.action.direction : step.action.target ? ' → ' + (step.action.target || step.action.item) : ''}</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">🧠 Agent Reasoning</div>
+      <div class="reasoning-text">${step.reasoning || '<em style="color:var(--muted)">No reasoning recorded.</em>'}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">⚡ Action Chosen</div>
+      <div class="action-json">${JSON.stringify(step.action, null, 2)}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">📬 World Response</div>
+      <div class="result-box ${step.success ? 'ok' : 'fail'}">
+        <span class="result-icon">${step.success ? '✓' : '✗'}</span>
+        <span>${step.message}</span>
+      </div>
+    </div>
+
+    ${isLast ? `
+    <div style="background:#0a1f0a;border:1px solid #2a5a2a;border-radius:10px;padding:20px 22px;text-align:center">
+      <div style="font-family:var(--sans);font-size:1.4rem;font-weight:800;color:var(--green);margin-bottom:6px">🎉 Goal Achieved!</div>
+      <div style="font-size:0.82rem;color:#90d090">Agent completed the key_door scenario in ${LOG.length} turns</div>
+    </div>` : ''}
+
+    <div class="nav-row">
+      <button class="nav-btn" onclick="prev()" ${current === 0 ? 'disabled' : ''}>← Previous</button>
+      <button class="nav-btn" onclick="next()" ${current === LOG.length - 1 ? 'disabled' : ''}>Next →</button>
+    </div>
+  `;
+}
+
+function next() { if (current < LOG.length - 1) { current++; render(); } }
+function prev() { if (current > 0) { current--; render(); } }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next();
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prev();
+});
+
+render();
+</script>
+</body>
+</html>
